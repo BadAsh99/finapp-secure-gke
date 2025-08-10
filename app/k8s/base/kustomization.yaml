@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: finapp
+resources:
+  - namespace.yaml
+  - deploy-api.yaml
+  - svc-api.yaml
+  - deploy-frontend.yaml
+  - svc-frontend.yaml
+  - netpol-default-deny.yaml
+images:
+  - name: IMAGE_API
+    newName: us-docker.pkg.dev/PROJECT_ID/REPO/api
+    newTag: dev
+  - name: IMAGE_FRONTEND
+    newName: us-docker.pkg.dev/PROJECT_ID/REPO/frontend
+    newTag: dev

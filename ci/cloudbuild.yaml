@@ -1,0 +1,50 @@
+substitutions:
+  _REGION: "us"                    # Artifact Registry location (e.g., us, us-central1)
+  _AR_REPO: "finapp"               # Artifact Registry repo name
+  _CLUSTER: "finapp-gke"
+  _ZONE: "us-central1-a"
+  _ENV: "dev"
+  _PROJECT_ID: "$PROJECT_ID"
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+steps:
+# Build images
+- name: gcr.io/cloud-builders/docker
+  args: ["build","-t","${_REGION}-docker.pkg.dev/${_PROJECT_ID}/${_AR_REPO}/api:${SHORT_SHA}","app/api"]
+- name: gcr.io/cloud-builders/docker
+  args: ["build","-t","${_REGION}-docker.pkg.dev/${_PROJECT_ID}/${_AR_REPO}/frontend:${SHORT_SHA}","app/frontend"]
+
+# Push images
+- name: gcr.io/cloud-builders/docker
+  args: ["push","${_REGION}-docker.pkg.dev/${_PROJECT_ID}/${_AR_REPO}/api:${SHORT_SHA}"]
+- name: gcr.io/cloud-builders/docker
+  args: ["push","${_REGION}-docker.pkg.dev/${_PROJECT_ID}/${_AR_REPO}/frontend:${SHORT_SHA}"]
+
+# Update kustomization image names/tags
+- name: gcr.io/cloud-builders/gcloud
+  id: "kustomize-render"
+  entrypoint: bash
+  args:
+    - -lc
+    - |
+      sed -i "s|us-docker.pkg.dev/PROJECT_ID/REPO/api|${_REGION}-docker.pkg.dev/${_PROJECT_ID}/${_AR_REPO}/api|g" app/k8s/base/kustomization.yaml
+      sed -i "s|us-docker.pkg.dev/PROJECT_ID/REPO/frontend|${_REGION}-docker.pkg.dev/${_PROJECT_ID}/${_AR_REPO}/frontend|g" app/k8s/base/kustomization.yaml
+      sed -i "s|newTag: dev|newTag: ${SHORT_SHA}|g" app/k8s/base/kustomization.yaml
+
+# Get cluster credentials
+- name: gcr.io/cloud-builders/gcloud
+  args: ["container","clusters","get-credentials","${_CLUSTER}","--zone","${_ZONE}","--project","${_PROJECT_ID}"]
+
+# Deploy via Kustomize
+- name: gcr.io/cloud-builders/kubectl
+  args: ["apply","-k","app/k8s/overlays/${_ENV}"]
+
+# Smoke test
+- name: gcr.io/cloud-builders/kubectl
+  args: ["get","svc","-n","finapp"]
+
+images:
+- "${_REGION}-docker.pkg.dev/${_PROJECT_ID}/${_AR_REPO}/api:${SHORT_SHA}"
+- "${_REGION}-docker.pkg.dev/${_PROJECT_ID}/${_AR_REPO}/frontend:${SHORT_SHA}"
