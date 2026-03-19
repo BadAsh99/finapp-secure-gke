@@ -2,30 +2,48 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: api
+  namespace: finapp
 spec:
   replicas: 1
   selector:
-    matchLabels: { app: api }
+    matchLabels:
+      app: api
   template:
     metadata:
-      labels: { app: api }
+      labels:
+        app: api
     spec:
       securityContext:
         runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       containers:
-      - name: api
-        image: IMAGE_API:dev
-        ports:
-          - containerPort: 8080
-        securityContext:
-          allowPrivilegeEscalation: false
-          readOnlyRootFilesystem: true
-        resources:
-          requests: { cpu: "100m", memory: "128Mi" }
-          limits:   { cpu: "500m", memory: "256Mi" }
-        livenessProbe:
-          httpGet: { path: /healthz, port: 8080 }
-          initialDelaySeconds: 5
-        readinessProbe:
-          httpGet: { path: /healthz, port: 8080 }
-          initialDelaySeconds: 5
+        - name: api
+          image: us-docker.pkg.dev/REPLACE_ME/finapp/api:latest
+          ports:
+            - containerPort: 5000
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsUser: 10001
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 10

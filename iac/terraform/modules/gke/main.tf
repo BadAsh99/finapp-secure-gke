@@ -54,6 +54,8 @@ resource "google_container_cluster" "gke" {
       enabled = true
     }
   }
+  
+ deletion_protection = false  
 }
 
 resource "google_container_node_pool" "default" {

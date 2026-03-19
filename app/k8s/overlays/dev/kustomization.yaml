@@ -1,5 +1,13 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+
 resources:
   - ../../base
-# Add dev-specific patches here later if needed
+
+images:
+  - name: us-docker.pkg.dev/REPLACE_ME/finapp/api
+    newName: us-docker.pkg.dev/gcp-palo-alto-infra-1d3dfb/finapp/api
+    newTag: dev
+  - name: us-docker.pkg.dev/REPLACE_ME/finapp/frontend
+    newName: us-docker.pkg.dev/gcp-palo-alto-infra-1d3dfb/finapp/frontend
+    newTag: dev

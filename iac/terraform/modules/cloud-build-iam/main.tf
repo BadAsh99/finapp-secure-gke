@@ -29,12 +29,12 @@ resource "google_service_account" "cb_deployer" {
 # 2) Allow Cloud Build to act as this SA
 #    (so you can pass --service-account=<this SA> on gcloud builds submit)
 #
-# Two principals used by Cloud Build:
-#  - Cloud Build Service Account:        <PROJECT_NUMBER>@cloudbuild.gserviceaccount.com
-#  - Cloud Build Service Agent:          service-<PROJECT_NUMBER>@gcp-sa-cloudbuild.iam.gserviceaccount.com
+# Principals used by Cloud Build:
+#  - Cloud Build Service Account: <PROJECT_NUMBER>@cloudbuild.gserviceaccount.com
+#  - Cloud Build Service Agent:   service-<PROJECT_NUMBER>@gcp-sa-cloudbuild.iam.gserviceaccount.com
 #
-# Grant:
-#  - iam.serviceAccountUser      → needed to "use" the SA
+# Grants:
+#  - iam.serviceAccountUser         → needed to "use" the SA
 #  - iam.serviceAccountTokenCreator → needed by service agent to mint tokens
 #############################################
 resource "google_service_account_iam_member" "allow_cb_sa_user" {
@@ -78,9 +78,4 @@ resource "google_project_iam_member" "gke_admin" {
   member  = "serviceAccount:${google_service_account.cb_deployer.email}"
 }
 
-#############################################
-# Outputs
-#############################################
-output "cloudbuild_deployer_sa_email" {
-  value = google_service_account.cb_deployer.email
-}
+#############################

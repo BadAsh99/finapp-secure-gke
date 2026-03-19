@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: frontend
+  namespace: finapp
 spec:
   replicas: 1
   selector:
@@ -14,12 +15,21 @@ spec:
         runAsNonRoot: true
       containers:
       - name: frontend
-        image: IMAGE_FRONTEND:dev
+        image: us-docker.pkg.dev/REPLACE_ME/finapp/frontend:latest
         ports:
-          - containerPort: 80
+          - containerPort: 8080
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true
-        resources:
-          requests: { cpu: "50m", memory: "64Mi" }
-          limits:   { cpu: "200m", memory: "128Mi" }
+          runAsUser: 101
+          capabilities: { drop: ["ALL"] }
+        volumeMounts:
+          - name: nginx-run
+            mountPath: /var/run
+          - name: nginx-cache
+            mountPath: /var/cache/nginx
+      volumes:
+        - name: nginx-run
+          emptyDir: {}
+        - name: nginx-cache
+          emptyDir: {}
